@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum AlertSeverity {
+  CRITICAL
+  WARNING
+  INFO
+}
+
+enum AlertCategory {
+  DUST
+  TEMPERATURE
+  SHADING
+  INVERTER
+  WIRING
+  NORMAL
+}
+
+enum FaultType {
+  NONE
+  DUST
+  TEMPERATURE_SPIKE
+  PARTIAL_SHADING
+  INVERTER_FAULT
+  WIRING_ISSUE
+}
+
+model User {
+  id              String           @id @default(cuid())
+  name            String
+  email           String           @unique
+  passwordHash    String
+  plan            Plan             @default(FREE)
+  currentPlan     Plan             @default(FREE)
+  planExpiresAt   DateTime?
+  isVerified      Boolean          @default(false)
+  isActive        Boolean          @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  panels          Panel[]
+  sessions        Session[]
+  systemConfig    SystemConfig?
+  subscriptions   Subscription[]
+  paymentHistory  PaymentHistory[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Panel {
+  id            String         @id @default(cuid())
+  userId        String
+  name          String
+  location      String
+  ratedPower    Float
+  installDate   DateTime
+  warrantyYears Int            @default(25)
+  isActive      Boolean        @default(true)
+  currentFault  FaultType      @default(NONE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readings      PanelReading[]
+  alerts        Alert[]
+  dailySummary  DailySummary[]
+
+  @@index([userId])
+}
+
+model PanelReading {
+  id          String   @id @default(cuid())
+  panelId     String
+  timestamp   DateTime @default(now())
+  voltage     Float
+  current     Float
+  power       Float
+  temperature Float
+  irradiance  Float
+  humidity    Float
+  efficiency  Float
+  panel       Panel    @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, timestamp])
+}
+
+model Alert {
+  id             String        @id @default(cuid())
+  panelId        String
+  severity       AlertSeverity
+  category       AlertCategory
+  title          String
+  message        String        @db.Text
+  actionRequired String        @db.Text
+  estimatedLoss  Float?
+  resolved       Boolean       @default(false)
+  resolvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  panel          Panel         @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, resolved])
+}
+
+model DailySummary {
+  id            String   @id @default(cuid())
+  panelId       String
+  date          DateTime @db.Date
+  totalEnergy   Float
+  avgEfficiency Float
+  moneySaved    Float
+  co2Offset     Float
+  peakPower     Float
+  peakTime      DateTime
+  panel         Panel    @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@unique([panelId, date])
+  @@index([panelId])
+}
+
+model SystemConfig {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  systemName    String   @default("My Solar System")
+  totalCapacity Float    @default(1.8)
+  location      String   @default("Lucknow, UP, India")
+  tariffRate    Float    @default(8.0)
+  installDate   DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  userId            String
+  plan              Plan
+  status            SubscriptionStatus @default(PENDING)
+  startDate         DateTime
+  endDate           DateTime
+  razorpayOrderId   String?            @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+  amountPaid        Float
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model PaymentHistory {
+  id                String        @id @default(cuid())
+  userId            String
+  subscriptionId    String?
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?
+  amount            Float
+  currency          String        @default("INR")
+  plan              Plan
+  status            PaymentStatus @default(PENDING)
+  failureReason     String?
+  createdAt         DateTime      @default(now())
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
