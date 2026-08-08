@@ -1,36 +1,37 @@
-# Node modules
+# Dependencies
 node_modules/
+.pnpm-store/
 
-# Environment files
+# Environment Variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*
 
 # Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
-pnpm-debug.log*
-*.log
+yarn-error.log*
 
-# Runtime artifacts
+# Database & Uploads
+/prisma/migrations/*.sql.bak
+/uploads/
+/temp/
+
+# IDE & System Files
 .DS_Store
-Thumbs.db
-ehthumbs.db
-
-# Editor directories
-.vscode/
 .idea/
-
-# Build output
-dist/
-coverage/
-
-# Prisma local databases
-*.sqlite
-*.db
-
-# Temporary files
-tmp/
-*.tmp
-
-# OS files
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 *.swp
+
+# Testing & Coverage
+coverage/
+.nyc_output/

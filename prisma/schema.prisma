@@ -1,11 +1,13 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
   output   = "../src/generated/client"
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 enum Plan {
@@ -201,4 +203,10 @@ model PaymentHistory {
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model HardwareManual {
+  id        String                 @id @default(cuid())
+  content   String
+  embedding Unsupported("vector")?
 }

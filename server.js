@@ -95,8 +95,13 @@ cron.schedule('0 0,12 * * *', async () => {
 async function start() {
   try {
 
-    await prisma.$connect();
-    console.log('✅ Database connected (Prisma)');
+    try {
+      await prisma.$connect();
+      console.log('✅ Database connected (Prisma)');
+    } catch (dbErr) {
+      console.warn('⚠️ Initial database connection warning:', dbErr.message);
+      console.log('🔄 Prisma will attempt lazy connection on incoming requests...');
+    }
 
     try {
       await redis.connect();

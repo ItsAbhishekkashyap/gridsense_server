@@ -15,20 +15,16 @@ async function createDemoPanels(userId, prisma) {
 
   if (existing.length >= 6) return existing;
 
-  const panels = [];
-  for (const spec of DEMO_PANEL_SPECS) {
-    const panel = await prisma.panel.create({
-      data: {
-        userId,
-        name: spec.name,
-        location: spec.location,
-        ratedPower: spec.ratedPower,
-        installDate: spec.installDate,
-        warrantyYears: 25,
-      },
-    });
-    panels.push(panel);
-  }
+  await prisma.panel.createMany({
+    data: DEMO_PANEL_SPECS.map(spec => ({
+      userId,
+      name: spec.name,
+      location: spec.location,
+      ratedPower: spec.ratedPower,
+      installDate: spec.installDate,
+      warrantyYears: 25,
+    })),
+  });
 
   await prisma.systemConfig.upsert({
     where: { userId },
@@ -43,7 +39,11 @@ async function createDemoPanels(userId, prisma) {
   });
 
   console.log(`[Seed] Created 6 demo panels for user ${userId}`);
-  return panels;
+
+  return prisma.panel.findMany({
+    where: { userId, isActive: true },
+    orderBy: { createdAt: 'asc' },
+  });
 }
 
 module.exports = { createDemoPanels, DEMO_PANEL_SPECS };

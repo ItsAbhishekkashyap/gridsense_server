@@ -26,6 +26,7 @@ const FAULT_ALERT_MAP = {
 
 async function checkAndCreateAlert(panelId, reading, _previousReadings, _ratedPower, io) {
   const currentFault = reading.faultType || 'NONE';
+  if (currentFault === 'NONE' || !FAULT_ALERT_MAP[currentFault]) return;
 
   const panel = await prisma.panel.findUnique({
     where: { id: panelId },

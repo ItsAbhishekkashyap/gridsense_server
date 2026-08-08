@@ -12,18 +12,17 @@ function calcHealthScore(criticalCount, warningCount) {
 
 async function getStats(req, res) {
   try {
-    const [panels, activeAlerts] = await Promise.all([
-      prisma.panel.findMany({
-        where: { userId: req.user.id, isActive: true },
-        include: {
-          readings: { orderBy: { timestamp: 'desc' }, take: 1 },
-        },
-      }),
-      prisma.alert.findMany({
-        where: { panel: { userId: req.user.id }, resolved: false },
-        select: { severity: true },
-      }),
-    ]);
+    const panels = await prisma.panel.findMany({
+      where: { userId: req.user.id, isActive: true },
+      include: {
+        readings: { orderBy: { timestamp: 'desc' }, take: 1 },
+      },
+    });
+
+    const activeAlerts = await prisma.alert.findMany({
+      where: { panel: { userId: req.user.id }, resolved: false },
+      select: { severity: true },
+    });
 
     let totalPower = 0;
     let totalEfficiency = 0;
@@ -96,16 +95,15 @@ async function getAlerts(req, res) {
     if (category) where.category = category;
     if (panelId) where.panelId = panelId;
 
-    const [alerts, total] = await Promise.all([
-      prisma.alert.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: parseInt(limit),
-        include: { panel: { select: { id: true, name: true, location: true } } },
-      }),
-      prisma.alert.count({ where }),
-    ]);
+    const alerts = await prisma.alert.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: parseInt(limit),
+      include: { panel: { select: { id: true, name: true, location: true } } },
+    });
+
+    const total = await prisma.alert.count({ where });
 
     return sendSuccess(res, { alerts, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
   } catch (err) {

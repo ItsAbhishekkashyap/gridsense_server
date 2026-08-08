@@ -5,6 +5,7 @@ const dashboardRoutes = require('./dashboard.routes');
 const alertRoutes = require('./alert.routes');
 const systemRoutes = require('./system.routes');
 const paymentRoutes = require('./payment.routes');
+const copilotRoutes = require('./copilot.routes');
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/alerts', alertRoutes);
 router.use('/system', systemRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/copilot', copilotRoutes);
 
 module.exports = router;

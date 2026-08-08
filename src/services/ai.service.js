@@ -70,6 +70,13 @@ async function analyzePanel(panelId, currentReading, last10Readings, ratedPower)
     }
   } catch { }
 
+  // Short-circuit LLM call for healthy panels (>85% efficiency) to conserve Groq tokens
+  if (currentReading && currentReading.efficiency >= 85) {
+    const analysis = { ...defaultAnalysis, updatedAt: new Date().toISOString() };
+    try { await redis.setex(cacheKey, 3600, JSON.stringify(analysis)); } catch {}
+    return analysis;
+  }
+
   const client = getGroqClient();
   if (!client) {
     const analysis = buildFallbackAnalysis(currentReading, ratedPower);
@@ -81,7 +88,7 @@ async function analyzePanel(panelId, currentReading, last10Readings, ratedPower)
 
   try {
     const completion = await client.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       messages: [
         {
           role: 'system',

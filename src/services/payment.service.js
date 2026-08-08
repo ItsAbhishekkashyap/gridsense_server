@@ -70,12 +70,15 @@ async function verifyAndActivate(userId, { razorpayOrderId, razorpayPaymentId, r
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + PLAN_DURATION_DAYS);
 
-  const [updatedPayment, subscription, user] = await prisma.$transaction([
-    prisma.paymentHistory.update({
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Update Payment Status
+    const updatedPayment = await tx.paymentHistory.update({
       where: { razorpayOrderId },
       data: { razorpayPaymentId, status: 'CAPTURED' },
-    }),
-    prisma.subscription.create({
+    });
+
+    // 2. Create Subscription
+    const subscription = await tx.subscription.create({
       data: {
         userId,
         plan: paymentRecord.plan,
@@ -87,8 +90,10 @@ async function verifyAndActivate(userId, { razorpayOrderId, razorpayPaymentId, r
         razorpaySignature,
         amountPaid: paymentRecord.amount,
       },
-    }),
-    prisma.user.update({
+    });
+
+    // 3. Update User Plan
+    const user = await tx.user.update({
       where: { id: userId },
       data: {
         currentPlan: paymentRecord.plan,
@@ -103,15 +108,18 @@ async function verifyAndActivate(userId, { razorpayOrderId, razorpayPaymentId, r
         currentPlan: true,
         planExpiresAt: true,
       },
-    }),
-  ]);
+    });
 
-  await prisma.paymentHistory.update({
-    where: { razorpayOrderId },
-    data: { subscriptionId: subscription.id },
+    // 4. Link Subscription ID to Payment History
+    await tx.paymentHistory.update({
+      where: { razorpayOrderId },
+      data: { subscriptionId: subscription.id },
+    });
+
+    return { subscription, user };
   });
 
-  return { success: true, subscription, user };
+  return { success: true, subscription: result.subscription, user: result.user };
 }
 
 async function getPaymentHistory(userId) {
