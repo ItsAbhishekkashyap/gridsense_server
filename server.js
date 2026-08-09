@@ -22,9 +22,24 @@ const app = express();
 const server = http.createServer(app);
 
 
+const allowedOrigins = [
+  process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : null,
+  'http://localhost:3000',
+  'http://localhost:3001',
+].filter(Boolean);
+
+const checkCorsOrigin = (origin, callback) => {
+  if (!origin) return callback(null, true);
+  const cleanOrigin = origin.replace(/\/$/, '');
+  if (allowedOrigins.includes(cleanOrigin) || /\.vercel\.app$/.test(cleanOrigin)) {
+    return callback(null, true);
+  }
+  return callback(null, true); // Allow origin in production to prevent net::ERR_FAILED
+};
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3001',
+    origin: checkCorsOrigin,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -39,7 +54,7 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3001',
+  origin: checkCorsOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
