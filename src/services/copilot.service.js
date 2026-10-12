@@ -14,7 +14,8 @@ function getLLM() {
   }
   return new ChatGroq({
     apiKey: process.env.GROQ_API_KEY,
-    model: 'llama-3.1-8b-instant',
+    // llama-3.1-8b-instant was retired by Groq; gpt-oss-120b supports tool calling for the agent graph
+    model: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
     temperature: 0.1,
   });
 }

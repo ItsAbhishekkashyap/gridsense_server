@@ -88,7 +88,9 @@ async function analyzePanel(panelId, currentReading, last10Readings, ratedPower)
 
   try {
     const completion = await client.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: process.env.GROQ_ANALYSIS_MODEL || 'openai/gpt-oss-20b',
+      // gpt-oss models reason before answering; reasoning counts toward max_tokens, so keep it low and leave headroom
+      reasoning_effort: 'low',
       messages: [
         {
           role: 'system',
@@ -101,7 +103,7 @@ async function analyzePanel(panelId, currentReading, last10Readings, ratedPower)
         },
       ],
       temperature: 0.3,
-      max_tokens: 400,
+      max_tokens: 1200,
     });
 
     const raw = completion.choices[0]?.message?.content || '{}';

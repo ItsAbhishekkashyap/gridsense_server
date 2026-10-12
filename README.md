@@ -19,7 +19,7 @@ The **GridSense Backend Subsystem** is an event-driven IoT API gateway and AI pr
 
 ### 💡 Core Engineering Capabilities
 1. **High-Frequency In-Memory Telemetry Engine (`panel.simulator.js`):** Generates 2-second physics-based solar panel readings, computes aggregate stats in process memory, and broadcasts live telemetry over isolated Socket.IO rooms (`user-{userId}`), reducing database query volume by **99.5%**.
-2. **Multi-Agent AI Copilot Engine (`copilot.service.js`):** Built with `@langchain/langgraph` and Groq `llama-3.1-8b-instant`. Uses a stateful directed graph with Zod-bound tools to route SQL telemetry queries vs. vector manual lookups.
+2. **Multi-Agent AI Copilot Engine (`copilot.service.js`):** Built with `@langchain/langgraph` and Groq `openai/gpt-oss-120b` (configurable via `GROQ_CHAT_MODEL`). Uses a stateful directed graph with Zod-bound tools to route SQL telemetry queries vs. vector manual lookups.
 3. **Dense Vector Hardware Manual RAG (`seed-vector-db.js` & `pgvector`):** Converts inverter manuals into 384-dimensional dense vectors via HuggingFace (`all-MiniLM-L6-v2`) and executes native cosine distance searches (`<=>`) inside PostgreSQL.
 4. **ACID Compliant Interactive Transactions (`payment.service.js`):** Encapsulates subscription activations within `prisma.$transaction`, ensuring atomic multi-table writes across `User`, `Subscription`, and `PaymentHistory`.
 5. **Cloud Redis Caching & Zero-Downtime Fallback (`redis.js`):** Integrates **Upstash Cloud Redis** (`rediss://`) for response caching with automatic connection error suppression and in-memory fallback.
